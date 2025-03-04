@@ -13,9 +13,9 @@ class TaskManagmentController extends Controller
      */
     public function index()
     {
-        $tasks = Tasks::where('user_id',Auth::id())->get();
+        $tasks = Tasks::where('user_id', Auth::id())->get();
 
-        return view('myviews.tasks.index',[
+        return view('myviews.tasks.index', [
             'tasks' => $tasks,
         ]);
     }
@@ -47,26 +47,20 @@ class TaskManagmentController extends Controller
         return redirect(route('tasks-index'))->with('success', 'Task başarıyla eklendi!');
     }
 
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
     {
-        $task = Tasks::find($id);
+        $task = Tasks::findOrFail($id);
 
-        return view('myviews.tasks.create-edit',[
+        if ($task->user_id !== Auth::id()) {
+            abort(403, 'Bu görevi düzenleme yetkiniz yok.');
+        }
+
+        return view('myviews.tasks.create-edit', [
             'task' => $task,
         ]);
-
     }
 
     /**
@@ -80,6 +74,11 @@ class TaskManagmentController extends Controller
         ]);
 
         $task = Tasks::findOrFail($id);
+
+        if ($task->user_id !== Auth::id()) {
+            abort(403, 'Bu görevi güncelleme yetkiniz yok.');
+        }
+
         $task->update([
             'name' => $request->title,
             'desc' => $request->description,
@@ -88,24 +87,36 @@ class TaskManagmentController extends Controller
         return redirect(route('tasks-index'))->with('success', 'Task başarıyla güncellendi!');
     }
 
-
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
-        $task = Tasks::find($id);
+        $task = Tasks::findOrFail($id);
+
+        if ($task->user_id !== Auth::id()) {
+            abort(403, 'Bu görevi silme yetkiniz yok.');
+        }
+
         $task->delete();
+
         return redirect(route('tasks-index'));
     }
 
+    /**
+     * Mark the specified task as complete.
+     */
     public function complete($id)
     {
         $task = Tasks::findOrFail($id);
+
+        if ($task->user_id !== Auth::id()) {
+            abort(403, 'Bu görevi tamamlama yetkiniz yok.');
+        }
+
         $task->status = 1;
         $task->save();
 
         return redirect(route('tasks-index'));
     }
-
 }
